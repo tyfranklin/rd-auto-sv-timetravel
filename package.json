@@ -4,7 +4,8 @@
   "description": "SV timetravel example",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -16,4 +17,7 @@
     "url": "https://github.com/tylerfranklin/rd-auto-sv-timetravel/issues"
   },
   "homepage": "https://github.com/tylerfranklin/rd-auto-sv-timetravel#readme",
+  "dependencies": {
+    "puppeteer": "^5.0.0"
+  }
 }
