@@ -6,6 +6,7 @@ const DIR_OUT = 'screenshots';
 const URL_DEMO = 'https://www.google.com/maps/@40.7573787,-73.9860078,3a,'
   + '75y,197.52h,109.03t/data=!3m6!1e1!3m4!1sTaaWxGerYu7hmj4-ATCrLg!2e0!7i16'
   + '384!8i8192';
+const SEL_TIMETRAVEL = '.tactile-timemachine__button-icon';
 const SEL_DISMISS = [
   '.widget-consent-button-later',
   '.section-homepage-promo-text-button'
@@ -31,6 +32,14 @@ async function clickIf() {
   await doIfFound(...arguments, async () => page.click(selector));
 }
 
+async function clickWhen(page, selector) {
+  await page.waitForSelector(selector);
+
+  const el = await page.$(selector);
+
+  el.click();
+}
+
 (async function run() {
   const browser = await puppeteer.launch({
       headless: false
@@ -50,6 +59,8 @@ async function clickIf() {
   for (let sel in SEL_HIDE) {
     hideIf(page, sel);
   }
+
+  clickWhen(page, SEL_TIMETRAVEL);
 
   const title = `times-sq.png`;
   await page.screenshot({path: path.join(DIR_OUT, title), fullPage: true});
