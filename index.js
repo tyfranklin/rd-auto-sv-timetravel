@@ -12,6 +12,10 @@ const URL_DEMO = 'https://www.google.com/maps/@40.7573787,-73.9860078,3a,'
       headless: false
   });
 
+  if (!fs.existsSync(DIR_OUT)){
+    fs.mkdirSync(DIR_OUT);
+  }
+
   const page = await browser.newPage();
   await page.goto(URL_DEMO, {'waitUntil' : 'networkidle0'});
   
