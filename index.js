@@ -11,111 +11,91 @@ const URL_DEMO =
   '384!8i8192';
 const SEL_CONTAINER =
   '.tactile-timemachine__seek-bar-container:not(.tactile-timemachine__loading)';
+const OPTS_GOTO = { waitUntil: 'networkidle0' };
 const SEL_TIMETRAVEL = '[aria-label="Show historical imagery"]';
 const SEL_SCRUBBER = `.tactile-timemachine__scrubber:not(.tactile-timemachine__scrubber-transitioning)`;
 const SEL_DISMISS = [
   '.widget-consent-button-later',
   '.section-homepage-promo-text-button',
 ];
-const SEL_HIDE = ['.widget-image-header-close'];
+const SEL_HIDE = [
+  '.widget-image-header-close',
+  '.widget-image-header-scrim',
+  '.watermark',
+  '.app-viewcard-strip',
+  '.scene-footer',
+  '.noprint',
+  '.gmnoprint',
+  '#titlecard',
+  '#watermark',
+  '#snackbar'
+];
+const MSG_SAVED = 'Screenshot saved:';
+const STATIC_DELAY = 50;
 
-let page;
+let page, browser;
 
-async function doIfFound(sel, cb) {
-  try {
-    await page.$(sel);
-    await cb();
-  } catch (e) {}
-}
+const justTry = async (cb) => {try {await cb();} catch (ignore) {}};
+const clickIf = async (sel) => await justTry(sel, () => page.click(sel));
+const setVis = async (sel, vis) => await justTry(() => page.$eval(sel, (e, v) => e.style.display = v, vis));
 
-async function hideIf() {
-  await doIfFound(...arguments, async () =>
-    page.evaluate((s) => {
-      document.querySelector(s).style.visibility = 'hidden';
-    }, sel)
-  );
-}
-
-async function clickIf() {
-  await doIfFound(...arguments, async () => page.click(sel));
-}
-
-async function keyNext(sel, key) {
+async function keyNext(key = 'Enter', sel = SEL_SCRUBBER) {
   await page.waitForSelector(sel);
   await page.focus(sel);
-  try {
-    await page.keyboard.press(key);
-  } catch (e) {}
+  await page.keyboard.press(key);
 }
 
-async function activateNext() {
-  await keyNext(...arguments, 'Enter');
+async function shoot() {
+  if (!fs.existsSync(DIR_OUT)) fs.mkdirSync(DIR_OUT);
+
+  const filePath = path.join(DIR_OUT, `times-sq-${kebabCase(await aria('text'))}.png`);
+ 
+  await new Promise(res => setTimeout(res, STATIC_DELAY * 12));
+  for (let sel of SEL_HIDE) setVis(sel, 'none');
+  await page.screenshot({ path: filePath, fullPage: true });
+  for (let sel of SEL_HIDE) setVis(sel, 'block');
+  
+  console.log(MSG_SAVED, filePath);
 }
 
-async function rightNext() {
-  await keyNext(...arguments, 'ArrowRight');
-}
-
-async function write(date) {
-  if (!fs.existsSync(DIR_OUT)) {
-    fs.mkdirSync(DIR_OUT);
-  }
-
-  const title = `times-sq-${date}.png`;
-  await page.screenshot({ path: path.join(DIR_OUT, title), fullPage: true });
-
-  console.log('Screenshot saved:', title);
-}
-
-async function getAttr(attr) {
-  await new Promise(res => setTimeout(res, 100));
+async function aria(attr) {
+  await new Promise(res => setTimeout(res, STATIC_DELAY));
   await page.waitForSelector(SEL_SCRUBBER);
-  return page.$eval(SEL_SCRUBBER, (e, a) => e.getAttribute(a), attr);
+
+  return page.$eval(SEL_SCRUBBER, (e, a) => e.getAttribute(a), `aria-value${attr}`);
 }
 
-async function getNowMax() {
-  const RADIX = 10;
-  return [
-    parseInt(await getAttr('aria-valuenow'), RADIX),
-    parseInt(await getAttr('aria-valuemax'), RADIX)
-  ];
-}
+async function init() {
+  browser = await puppeteer.launch({
+    headless: false,
+  });
+  page = await browser.newPage();
+  await page.goto(URL_DEMO, OPTS_GOTO);
 
-async function getDateValue() {
-  return kebabCase(await getAttr('aria-valuetext'));
+  for (let sel of SEL_DISMISS) clickIf(sel);
+
+  await keyNext('Enter', SEL_TIMETRAVEL);
 }
 
 (async function run() {
-  const browser = await puppeteer.launch({
-    headless: false,
-  });
-
   try {
-    page = await browser.newPage();
-    await page.goto(URL_DEMO, { waitUntil: 'networkidle0' });
+    await init();
 
-    for (let sel of SEL_DISMISS) clickIf(sel);
-    for (let sel of SEL_HIDE) hideIf(sel);
-
-    await activateNext(SEL_TIMETRAVEL);
-
-    let selScrub, date, converged = false;
+    let converged = false;
     do {
-      await activateNext(SEL_SCRUBBER);
+      await keyNext();
+      await shoot();
+      await keyNext('ArrowRight');
 
-      date = await getDateValue();
-      await write(date);
-      await rightNext(SEL_SCRUBBER);
-
-      converged = isEqual(...(await getNowMax()));
+      converged = isEqual(...[
+        await aria('now'), 
+        await aria('max')
+      ].map((a) => parseInt(a, 10)));
     } while (!converged);
 
-    console.log('COMPLETE');
-    await new Promise(resolve => setTimeout(resolve, 1e5));
-    
-  } catch (ignore) {
+  } catch (err) {
     console.error('Time-travel not available.');
-    console.error(ignore);
+    console.error(err);
   } finally {
     page.close();
   }
