@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/tylerfranklin/rd-auto-sv-timetravel#readme",
   "dependencies": {
+    "lodash": "^4.17.15",
     "puppeteer": "^5.0.0"
   }
 }
