@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "ts-node index.ts"
   },
   "repository": {
     "type": "git",
@@ -18,7 +18,11 @@
   },
   "homepage": "https://github.com/tylerfranklin/rd-auto-sv-timetravel#readme",
   "dependencies": {
-    "lodash": "^4.17.15",
-    "puppeteer": "^5.0.0"
+    "@types/lodash": "^4.14.157",
+    "@types/puppeteer": "^3.0.1",
+    "lodash": "^4.17.19",
+    "puppeteer": "^5.0.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
   }
 }
