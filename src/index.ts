@@ -46,10 +46,17 @@ async function shoot() {
   if (!fs.existsSync(DIR_OUT)) fs.mkdirSync(DIR_OUT);
 
   const animDelay = STATIC_DELAY * 12;
-  const filePath = path.join(
-    DIR_OUT,
-    `times-sq-${kebabCase(await aria('text'))}.png`
-  );
+  let nameAvailable = false;
+  let count = 0;
+  let filePath;
+  do {
+    count++;
+    filePath = path.join(
+      DIR_OUT,
+      `times-sq-${kebabCase(await aria('text'))}-${count}.png`
+    );
+    nameAvailable = !fs.existsSync(filePath);
+  } while (!nameAvailable);
 
   await new Promise((res) => setTimeout(res, animDelay)); // Wait for load
   for (let sel of SEL_HIDE) setVis(sel, 'none'); // Hide overlay
